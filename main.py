@@ -10,7 +10,7 @@ GAME_CONFIG = "/home/steam/.steam/steam/steamapps/common/PalServer/Pal/Saved/Con
 def run_command(command):
     try:
         result = subprocess.run(command, shell=True, text=True, capture_output=True)
-        if result.returncode == 0:
+        if result.returncode == 0 or result.returncode == 3:
             return result.stdout
         else:
             return result.stderr
@@ -19,7 +19,8 @@ def run_command(command):
 
 # Функция обновления статуса
 def get_status():
-    return run_command("systemctl status palworld.service")
+    res = run_command("systemctl status palworld.service")
+    return res.split("\n")[2].strip().split(" ")[1]
 
 # Функции для работы с конфигом
 def load_config():
@@ -51,7 +52,12 @@ st.title("Управление Palworld сервером")
 # При открытии страницы показать статус
 st.subheader("Текущий статус сервера")
 status_output = get_status()
-st.text_area("Вывод systemctl status", status_output, height=400)
+# st.text_area("Вывод systemctl status", status_output, height=400)
+match status_output:
+    case 'active':
+        st.success("Сервер работает")
+    case 'inactive':
+        st.warning("Сервер выключен")
 
 # Кнопки управления сервером
 col1, col2, col3, col4 = st.columns(4)
@@ -60,23 +66,27 @@ with col1:
     if st.button("Запустить сервер"):
         run_command("systemctl start palworld.service")
         st.success("Сервер запущен")
-        st.text_area("Актуальный статус", get_status(), height=400)
+        st.rerun()
+        # st.text_area("Актуальный статус", get_status(), height=400)
 
 with col2:
     if st.button("Перезапустить сервер"):
         run_command("systemctl restart palworld.service")
         st.success("Сервер перезапущен")
-        st.text_area("Актуальный статус", get_status(), height=400)
+        st.rerun()
+        # st.text_area("Актуальный статус", get_status(), height=400)
 
 with col3:
     if st.button("Остановить сервер"):
         run_command("systemctl stop palworld.service")
         st.warning("Сервер остановлен")
-        st.text_area("Актуальный статус", get_status(), height=400)
+        st.rerun()
+        # st.text_area("Актуальный статус", get_status(), height=400)
 
 with col4:
     if st.button("Статус сервера"):
-        st.text_area("Актуальный статус", get_status(), height=400)
+        st.rerun()
+        # st.text_area("Актуальный статус", get_status(), height=400)
 
 # ---------------- Редактор конфига ----------------
 st.subheader("Редактор конфигурации Palworld")
